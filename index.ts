@@ -51,7 +51,6 @@ app.post('/api/users' , async (req, res) => {
   }
 })
 
-//to-do: return the user just created...
 app.get('/api/users' , async (req, res) => {
 
     const allUsers = await users.find({}).toArray();
@@ -62,8 +61,20 @@ app.get('/api/users' , async (req, res) => {
 app.post('/api/users/:_id/exercises', async (req, res) => {
   const id = req.params._id;
   const description = req.body.description;
-  const duration = req.body.duration;
-  const date = req.body.date;
+  let duration = Number(req.body.duration);
+  let date = new Date(req.body.date).toDateString();
+
+  if(date === 'Invalid Date') {
+    return res.json('invalid date')
+  }
+
+  if (!date) {
+    date = new Date().toDateString()
+  }
+
+  if(isNaN(duration)) {
+    duration = 0;
+  }
 
   const userToUpdate = await users.findOne({_id: new ObjectId(id)});
 
@@ -82,36 +93,6 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
     return res.json('invalid user')
   }
 
-  })
-
-
-let resUserObject = {};
-let hasPosted = false;
-app.all('deprecated/api/users', async (req, res) => {
-  if(req.method === 'POST') {
-    const newuser = req.body.username.trim();
-    const existingUser = await users.findOne({username: newuser})
-
-    if (!existingUser) {
-      console.log('user does not exists, creating a new one...')
-      await users.insertOne({username: newuser})
-      const addedUser = await users.findOne({username: newuser})
-      resUserObject = addedUser!
-    } else {
-      console.log('user alread exists! returning it')
-      resUserObject = {_id: existingUser._id, username: existingUser.username}
-    }
-    hasPosted = true;
-    res.redirect('/api/users')
-  } else if (req.method === 'GET') {
-    if (!hasPosted) {
-      const allUsers = await users.find({}).toArray();
-      hasPosted = false;
-      return res.json(allUsers)
-    } else {
-      return res.json(resUserObject)
-    }
-  }
 })
 
 const port = process.env.PORT || 3333;
