@@ -62,14 +62,15 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
   const id = req.params._id;
   const description = req.body.description;
   let duration = Number(req.body.duration);
-  let date = new Date(req.body.date).toDateString();
+  let date = req.body.date;
 
-  if(date === 'Invalid Date') {
-    return res.json('invalid date')
-  }
-
+  
   if (!date) {
     date = new Date().toDateString()
+  } else if(new Date(date).toDateString() === 'Invalid Date') {
+    return res.json('invalid date')
+  } else {
+    date = new Date(date).toDateString()
   }
 
   if(isNaN(duration)) {
@@ -93,6 +94,16 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
     return res.json('invalid user')
   }
 
+})
+
+app.get('/api/users/:_id/logs', async (req, res) => {
+  const id = req.params._id;
+  const userToReturn = await users.findOne({_id: new ObjectId(id)});
+  if (userToReturn) {
+    return res.json({count: userToReturn.log?.length, ...userToReturn })
+  } else {
+    return res.json('invalid user');
+  }
 })
 
 const port = process.env.PORT || 3333;
