@@ -8,16 +8,15 @@ interface User {
   username: string;
   log?: Exercise[];
 }
-interface UserDocument {
-  _id: ObjectId;
-  username: string;
-  log?: Exercise[];
-}
 
 interface Exercise {
   description: string;
   duration: number;
   date: string;
+}
+
+interface UserDocument extends User {
+  _id: ObjectId;
 }
 
 const mongoURI = process.env.MONGO_URI
@@ -97,16 +96,6 @@ app.post('/api/users/:_id/exercises', async (req, res) => {
 
 })
 
-app.get('/deprecated/api/users/:_id/logs', async (req, res) => {
-  const id = req.params._id;
-  const userToReturn = await users.findOne({_id: new ObjectId(id)});
-  if (userToReturn) {
-    return res.json({count: userToReturn.log?.length, ...userToReturn })
-  } else {
-    return res.json('invalid user');
-  }
-})
-
 //route: api/users/:_id/logs?[from][&to][&limit]
 app.get('/api/users/:_id/logs', async (req, res) => {
   const id = req.params._id;
@@ -150,42 +139,6 @@ app.get('/api/users/:_id/logs', async (req, res) => {
     _id: userToReturn._id,
     log: filteredLog
   })
-})
-
-app.get('/api/users/:_id/logs?[from][&to][&limit]', async (req,res) => {
-  const id = req.params._id;
-  const fromDate = req.query.from?.toString();
-  const toDate = req.query.to?.toString();
-  const limit = Number(req.query.limit);
-  if(!fromDate || new Date(fromDate).toDateString() === 'Invalid Date') {
-    return res.json('invalid from-date parameter')
-  }
-  if(!toDate || new Date(toDate).toDateString() === 'Invalid Date') {
-    return res.json('invalid to-date parameter')
-  }
-  if(isNaN(limit)) {
-    return res.json('invalid limit parameter')
-  }
-
-  const userToReturn = await users.findOne({_id: new ObjectId(id)});
-  
-  if(!userToReturn) {
-    return res.json('user not founded')
-  }
-  if (!userToReturn.log) {
-    return res.json('user does not have any log')
-  }
-
-  const filteredLog = userToReturn.log.filter(l => new Date(l.date) >= new Date(fromDate) && 
-                                                    new Date(l.date) <= new Date(toDate))
-  return res.json({
-    username: userToReturn.username,
-    count: userToReturn.log.length,
-    _id: userToReturn._id,
-    log: filteredLog
-  })
-  
-
 })
 
 const port = process.env.PORT || 3333;
